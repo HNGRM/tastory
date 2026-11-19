@@ -28,8 +28,7 @@ Key Features:
   sort by Latest or Most Liked, and filter by closest region using
   the "Near Me" Haversine distance button.
 - Social Interactions: Like stories, write/delete real-time comments,
-  and Remix any board into your own studio (remix count increments
-  only when the remixed story is actually published).
+  and Remix any board into your own studio.
 - TASTORY Studio (/archive): Search 4 external Open APIs (with a
   year-by-category Top 5 Chart and quick X clear button), upload and
   crop custom images via HTML5 Canvas, reorder slots via drag-and-drop
@@ -92,10 +91,6 @@ Prerequisites: Node.js (v20 or higher) and npm installed.
    $ npm run dev
 
 3) Open http://localhost:3000 in your browser.
-
-   (If running from a clone without `.env`, create a `.env` file with
-    DATABASE_URL, DIRECT_URL, TMDB_ACCESS_TOKEN, KAKAO_REST_API_KEY,
-    RAWG_API_KEY, and SESSION_SECRET.)
 
 ------------------------------------------------------------------------
 6. QUICK TESTING GUIDE FOR GRADING
