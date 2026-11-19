@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 let seedPromise: Promise<void> | null = null;
+let seededDone = false;
 
 interface SeedUserDef {
   key: string;
@@ -159,8 +160,26 @@ const USER_ORDER_ROUNDS = [
 ];
 
 async function runSeed() {
+  if (seededDone) return;
+
   const existingPosts = await prisma.post.count();
   if (existingPosts >= 30) {
+    seededDone = true;
+    return;
+  }
+
+  // Atomic distributed lock using User.email @unique constraint (works across PgBouncer & serverless)
+  try {
+    await prisma.user.create({
+      data: {
+        email: 'seed-lock@tastory.internal',
+        name: 'System Seed Lock',
+        provider: 'system',
+      },
+    });
+  } catch {
+    // Another instance is already seeding or has seeded
+    seededDone = true;
     return;
   }
 
@@ -169,6 +188,12 @@ async function runSeed() {
   await prisma.like.deleteMany({});
   await prisma.archiveItem.deleteMany({});
   await prisma.post.deleteMany({});
+
+  await seedAllRecords();
+  seededDone = true;
+}
+
+async function seedAllRecords() {
 
   const createdUsers = await Promise.all(
     SEED_USERS.map((u) =>
@@ -228,33 +253,33 @@ async function runSeed() {
     }
   }
 
-  const createdPosts = [];
-  for (const p of postsToCreate) {
-    const post = await prisma.post.create({
-      data: {
-        userId: p.userId,
-        title: p.title,
-        caption: p.caption,
-        city: p.city,
-        country: p.country,
-        countryCode: p.countryCode,
-        locationText: p.locationText,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        aspectRatio: p.aspectRatio,
-        bgColor: p.bgColor,
-        textColor: p.textColor,
-        fontStyle: p.fontStyle,
-        showLabels: p.showLabels,
-        remixCount: p.remixCount,
-        createdAt: p.createdAt,
-        items: {
-          create: p.items,
+  const createdPosts = await Promise.all(
+    postsToCreate.map((p) =>
+      prisma.post.create({
+        data: {
+          userId: p.userId,
+          title: p.title,
+          caption: p.caption,
+          city: p.city,
+          country: p.country,
+          countryCode: p.countryCode,
+          locationText: p.locationText,
+          latitude: p.latitude,
+          longitude: p.longitude,
+          aspectRatio: p.aspectRatio,
+          bgColor: p.bgColor,
+          textColor: p.textColor,
+          fontStyle: p.fontStyle,
+          showLabels: p.showLabels,
+          remixCount: p.remixCount,
+          createdAt: p.createdAt,
+          items: {
+            create: p.items,
+          },
         },
-      },
-    });
-    createdPosts.push(post);
-  }
+      }),
+    ),
+  );
 
   // Deduplicated cross-user likes (3 to 7 likes per post)
   const seenLikes = new Set<string>();
