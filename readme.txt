@@ -79,26 +79,23 @@ Key Features:
 ------------------------------------------------------------------------
 Prerequisites: Node.js (v20 or higher) and npm installed.
 
+* Note for Grading: For convenience, the `.env` file containing the
+  configured database and Open API keys is already included in this
+  submission zip package (excluded from the public GitHub repository
+  for security). No manual API key registration is required.
+
 1) Install dependencies:
    $ npm install
 
-2) Configure environment variables:
-   Create a `.env` file in the root directory with:
-     DATABASE_URL="<PostgreSQL connection string>"
-     DIRECT_URL="<PostgreSQL direct connection string>"
-     TMDB_ACCESS_TOKEN="<TMDB Bearer Token>"
-     KAKAO_REST_API_KEY="<Kakao REST API Key>"
-     RAWG_API_KEY="<RAWG API Key>"
-     SESSION_SECRET="<Any random secret string>"
-
-   (Note: Book and Music searches still work via Open Library and iTunes
-    without API keys, and fallback demo data is provided if keys are omitted.)
-
-3) Generate Prisma Client & start the development server:
+2) Generate Prisma Client & start the development server:
    $ npx prisma generate
    $ npm run dev
 
-4) Open http://localhost:3000 in your browser.
+3) Open http://localhost:3000 in your browser.
+
+   (If running from a clone without `.env`, create a `.env` file with
+    DATABASE_URL, DIRECT_URL, TMDB_ACCESS_TOKEN, KAKAO_REST_API_KEY,
+    RAWG_API_KEY, and SESSION_SECRET.)
 
 ------------------------------------------------------------------------
 6. QUICK TESTING GUIDE FOR GRADING
