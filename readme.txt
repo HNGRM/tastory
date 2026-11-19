@@ -59,7 +59,6 @@ Key Features:
 ├── public/
 │   └── seed-images/          # Local cover assets for initial community posts
 ├── data/
-│   ├── games.json            # Korean-to-English game title dictionary
 │   └── mockFallback.ts       # Fallback demo search data
 ├── src/
 │   ├── app/

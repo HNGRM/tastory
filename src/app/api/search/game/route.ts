@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import gameDictionary from '@/../data/games.json';
 import { filterMockResults, MOCK_GAMES } from '@/../data/mockFallback';
 import type { SearchResultItem } from '@/types/archive';
-
-const gameMap = new Map<string, string>();
-Object.entries(gameDictionary as Record<string, string>).forEach(([kr, en]) => {
-  gameMap.set(kr.toLowerCase().trim(), en);
-  gameMap.set(kr.replace(/\s+/g, '').toLowerCase(), en);
-});
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query')?.trim() || '';
@@ -24,11 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const normalized = query.toLowerCase();
-    const noSpace = normalized.replace(/\s+/g, '');
-    const targetSearch = gameMap.get(normalized) || gameMap.get(noSpace) || query;
-
-    const rawgUrl = `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(targetSearch)}&page_size=20`;
+    const rawgUrl = `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(query)}&page_size=20`;
     const res = await fetch(rawgUrl, { cache: 'no-store' });
 
     if (!res.ok) {
