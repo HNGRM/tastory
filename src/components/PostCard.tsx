@@ -64,7 +64,7 @@ export function PostCard({
   onDeleted,
 }: PostCardProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, openSignInModal } = useAuth();
   const commentInputRef = useRef<HTMLInputElement | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
 
@@ -87,6 +87,10 @@ export function PostCard({
   const slotMap = itemsToMap(post.items);
 
   const handleLike = async () => {
+    if (!user) {
+      openSignInModal();
+      return;
+    }
     const prevLiked = liked;
     const prevCount = likeCount;
     setLiked(!prevLiked);
@@ -125,6 +129,10 @@ export function PostCard({
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      openSignInModal();
+      return;
+    }
     if (!commentInput.trim()) return;
 
     setPostingComment(true);
@@ -158,6 +166,10 @@ export function PostCard({
   };
 
   const handleRemix = () => {
+    if (!user) {
+      openSignInModal(`/archive?remix=${post.id}`);
+      return;
+    }
     router.push(`/archive?remix=${post.id}`);
   };
 

@@ -106,28 +106,27 @@ export async function getOrCreateGuestUser(name?: string): Promise<UserProfile> 
   return user;
 }
 
-export async function getCurrentUser(): Promise<UserProfile> {
+export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (token) {
-      const payload = verifySessionToken(token);
-      if (payload) {
-        const user = await prisma.user.findUnique({
-          where: { id: payload.userId },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            image: true,
-            provider: true,
-          },
-        });
-        if (user) return user;
-      }
-    }
+    if (!token) return null;
+
+    const payload = verifySessionToken(token);
+    if (!payload) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        provider: true,
+      },
+    });
+    return user;
   } catch {
-    // Fall back to default guest user
+    return null;
   }
-  return getOrCreateGuestUser();
 }
