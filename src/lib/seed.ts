@@ -159,26 +159,12 @@ const USER_ORDER_ROUNDS = [
 ];
 
 async function runSeed() {
-  const [existingPosts, existingLikes, existingComments] = await Promise.all([
-    prisma.post.count(),
-    prisma.like.count(),
-    prisma.comment.count(),
-  ]);
-
-  const latestPost = await prisma.post.findFirst({
-    orderBy: { createdAt: 'desc' },
-  });
-
-  if (
-    existingPosts >= 30 &&
-    existingLikes > 0 &&
-    existingComments > 0 &&
-    latestPost?.title === 'MY 5-YEAR TASTORY'
-  ) {
+  const existingPosts = await prisma.post.count();
+  if (existingPosts >= 30) {
     return;
   }
 
-  // Clean previous seed
+  // Clean partial seed if any
   await prisma.comment.deleteMany({});
   await prisma.like.deleteMany({});
   await prisma.archiveItem.deleteMany({});

@@ -5,8 +5,10 @@ import { prisma } from '@/lib/prisma';
 import { ensureSeeded } from '@/lib/seed';
 
 export async function GET(request: NextRequest) {
-  await ensureSeeded();
-  const currentUser = await getCurrentUser();
+  const [, currentUser] = await Promise.all([
+    ensureSeeded(),
+    getCurrentUser(),
+  ]);
 
   const searchParams = request.nextUrl.searchParams;
   const location = searchParams.get('location')?.trim() || '';
@@ -14,6 +16,14 @@ export async function GET(request: NextRequest) {
   const userId = searchParams.get('userId')?.trim() || '';
   const likedByMe = searchParams.get('likedByMe') === 'true';
   const query = searchParams.get('q')?.trim() || '';
+  const limitParam = Number(searchParams.get('limit') || '0');
+  const offsetParam = Number(searchParams.get('offset') || '0');
+  const take =
+    Number.isFinite(limitParam) && limitParam > 0
+      ? Math.min(limitParam, 50)
+      : undefined;
+  const skip =
+    Number.isFinite(offsetParam) && offsetParam > 0 ? offsetParam : undefined;
 
   const where: Record<string, unknown> = {};
   if (location && location !== 'all') {
@@ -34,9 +44,11 @@ export async function GET(request: NextRequest) {
     ];
   }
 
-  const [posts, locationGroups] = await Promise.all([
+  const [posts, totalCount, locationGroups] = await Promise.all([
     prisma.post.findMany({
       where,
+      take,
+      skip,
       include: {
         user: { select: { id: true, name: true, image: true } },
         items: true,
@@ -55,6 +67,7 @@ export async function GET(request: NextRequest) {
           ? [{ likes: { _count: 'desc' } }, { createdAt: 'desc' }]
           : [{ createdAt: 'desc' }],
     }),
+    prisma.post.count({ where }),
     prisma.post.groupBy({
       by: ['locationText', 'city', 'countryCode'],
       _count: { id: true },
@@ -65,6 +78,9 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     posts: posts.map((p) => serializePost(p, currentUser?.id || null)),
+    totalCount,
+    hasMore:
+      take !== undefined ? (skip || 0) + posts.length < totalCount : false,
     locations: locationGroups.map((g) => ({
       locationText: g.locationText,
       city: g.city,

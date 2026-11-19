@@ -55,6 +55,8 @@ export default function FeedPage() {
   const [sort, setSort] = useState<'latest' | 'popular'>('latest');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [detectingNearMe, setDetectingNearMe] = useState(false);
   const [nearMeMessage, setNearMeMessage] = useState<string | null>(null);
 
@@ -63,6 +65,7 @@ export default function FeedPage() {
     const params = new URLSearchParams();
     if (selectedLocation !== 'all') params.set('location', selectedLocation);
     params.set('sort', sort);
+    params.set('limit', '8');
     if (searchQuery.trim()) params.set('q', searchQuery.trim());
 
     fetch(`/api/posts?${params.toString()}`, { cache: 'no-store' })
@@ -71,6 +74,7 @@ export default function FeedPage() {
         if (!active || !data) return;
         setPosts(data.posts || []);
         setLocations(data.locations || []);
+        setHasMore(Boolean(data.hasMore));
       })
       .catch((err) => {
         console.error('Failed to load feed:', err);
@@ -83,6 +87,30 @@ export default function FeedPage() {
       active = false;
     };
   }, [selectedLocation, sort, searchQuery]);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedLocation !== 'all') params.set('location', selectedLocation);
+      params.set('sort', sort);
+      params.set('limit', '8');
+      params.set('offset', String(posts.length));
+      if (searchQuery.trim()) params.set('q', searchQuery.trim());
+
+      const res = await fetch(`/api/posts?${params.toString()}`, {
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPosts((prev) => [...prev, ...(data.posts || [])]);
+        setHasMore(Boolean(data.hasMore));
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const findClosestRegion = (
     lat?: number | null,
@@ -344,21 +372,37 @@ export default function FeedPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onSelectLocation={(loc) => {
-                setNearestLocation(loc);
-                setSelectedLocation(loc);
-              }}
-              onDeleted={(deletedId) =>
-                setPosts((prev) => prev.filter((p) => p.id !== deletedId))
-              }
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onSelectLocation={(loc) => {
+                  setNearestLocation(loc);
+                  setSelectedLocation(loc);
+                }}
+                onDeleted={(deletedId) =>
+                  setPosts((prev) => prev.filter((p) => p.id !== deletedId))
+                }
+              />
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                type="button"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-3 text-xs font-bold text-zinc-100 transition hover:border-amber-400/60 hover:bg-zinc-800 disabled:opacity-50"
+              >
+                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loadingMore ? 'Loading more stories...' : 'Load More Stories'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
