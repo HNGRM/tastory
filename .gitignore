@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local sqlite dev db & office lock files
+prisma/dev.db*
+~$*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

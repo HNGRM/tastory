@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,15 +7,33 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #f2f5e8;
+  --foreground: #1b240d;
+
+  /* Light Olive Surface & Deep Olive Typography Scale */
+  --color-zinc-950: #f2f5e8;
+  --color-zinc-900: #e5ecd5;
+  --color-zinc-800: #cedbb7;
+  --color-zinc-700: #b4c794;
+  --color-zinc-600: #879e61;
+  --color-zinc-500: #617440;
+  --color-zinc-400: #48582e;
+  --color-zinc-300: #33401d;
+  --color-zinc-200: #253014;
+  --color-zinc-100: #1b240d;
+  --color-zinc-50: #131a09;
+
+  /* Rich Deep Olive Brand Accent Scale */
+  --color-amber-500: #3b4c1b;
+  --color-amber-400: #475b21;
+  --color-amber-300: #364718;
+  --color-amber-200: #293611;
+  --color-orange-500: #2f3e15;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
