@@ -4,10 +4,13 @@ import { prisma } from '@/lib/prisma';
 import type { UserProfile } from '@/types/archive';
 
 const SESSION_COOKIE_NAME = 'tastory_session';
+const DEVICE_COOKIE_NAME = 'tastory_device_id';
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7; // 7 days
+const DEVICE_MAX_AGE_SEC = 60 * 60 * 24 * 365; // 1 year
 
 export const GUEST_USER = {
-  email: 'guest@tastory.local',
+  emailPrefix: 'guest-',
+  emailDomain: '@tastory.local',
   defaultName: 'Guest Curator',
 };
 
@@ -85,13 +88,50 @@ export async function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
-export async function getOrCreateGuestUser(name?: string): Promise<UserProfile> {
+export async function getOrCreateDeviceGuestUser(
+  name?: string,
+): Promise<UserProfile> {
   const cleanName = (name || '').trim().slice(0, 32);
+
+  // 1. If already signed in via active session, update/return that exact user
+  const existingSessionUser = await getCurrentUser();
+  if (existingSessionUser) {
+    if (cleanName && cleanName !== existingSessionUser.name) {
+      return prisma.user.update({
+        where: { id: existingSessionUser.id },
+        data: { name: cleanName },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+          provider: true,
+        },
+      });
+    }
+    return existingSessionUser;
+  }
+
+  // 2. Otherwise identify this browser/device via persistent device cookie
+  const cookieStore = await cookies();
+  let deviceId = cookieStore.get(DEVICE_COOKIE_NAME)?.value?.trim();
+  if (!deviceId || !/^[a-zA-Z0-9_-]{6,32}$/.test(deviceId)) {
+    deviceId = crypto.randomBytes(6).toString('hex');
+    cookieStore.set(DEVICE_COOKIE_NAME, deviceId, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: DEVICE_MAX_AGE_SEC,
+    });
+  }
+
+  const deviceEmail = `${GUEST_USER.emailPrefix}${deviceId}${GUEST_USER.emailDomain}`;
   const user = await prisma.user.upsert({
-    where: { email: GUEST_USER.email },
+    where: { email: deviceEmail },
     update: cleanName ? { name: cleanName } : {},
     create: {
-      email: GUEST_USER.email,
+      email: deviceEmail,
       name: cleanName || GUEST_USER.defaultName,
       provider: 'guest',
     },

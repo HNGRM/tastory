@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateGuestUser, setSessionCookie } from '@/lib/auth';
+import { getOrCreateDeviceGuestUser, setSessionCookie } from '@/lib/auth';
 import { ensureSeeded } from '@/lib/seed';
 
 export async function POST(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const name = typeof body.name === 'string' ? body.name : undefined;
 
-    const user = await getOrCreateGuestUser(name);
+    const user = await getOrCreateDeviceGuestUser(name);
     await setSessionCookie(user.id);
 
     return NextResponse.json({ user });
